@@ -163,18 +163,25 @@ class TD3Inference(Node):
         rl = max(-250, min(250, base - diff))
         rr = max(-250, min(250, base + diff))
 
-        # Publish motor values
+        # ── Physical motor layout (from robot wiring diagram) ──────────
+        #   Index: [M1,   M2,   M3,   M4  ]
+        #   Pos:   [BR,   BL,   FL,   FR  ]
+        # So we map:
+        #   M1 (index 0) = Back-Right  = rr
+        #   M2 (index 1) = Back-Left   = rl
+        #   M3 (index 2) = Front-Left  = fl
+        #   M4 (index 3) = Front-Right = fr
         mot_msg = Int32MultiArray()
-        mot_msg.data = [fl, fr, rl, rr]
+        mot_msg.data = [rr, rl, fl, fr]   # [M1, M2, M3, M4]
         self.motor_pub.publish(mot_msg)
 
         # Publish motor signs for encoder_pub direction tracking
         sign_msg = Int32MultiArray()
         sign_msg.data = [
-            1 if fl >= 0 else -1,
-            1 if fr >= 0 else -1,
-            1 if rl >= 0 else -1,
-            1 if rr >= 0 else -1,
+            1 if rr >= 0 else -1,   # M1 = BR
+            1 if rl >= 0 else -1,   # M2 = BL
+            1 if fl >= 0 else -1,   # M3 = FL
+            1 if fr >= 0 else -1,   # M4 = FR
         ]
         self.sign_pub.publish(sign_msg)
 

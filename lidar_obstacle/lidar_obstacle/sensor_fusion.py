@@ -72,7 +72,11 @@ class SensorFusion(Node):
         self._y      = 0.0
         self._theta  = 0.0   # radians
 
-        # Encoder velocities [FL, FR, RL, RR] in m/s
+        # Encoder velocities — enc_val index matches motor wiring:
+        # index 0 = M1 = Back-Right  (BR)
+        # index 1 = M2 = Back-Left   (BL)
+        # index 2 = M3 = Front-Left  (FL)
+        # index 3 = M4 = Front-Right (FR)
         self._wheel_vel = [0.0, 0.0, 0.0, 0.0]
 
         # Last LiDAR scan ranges
@@ -107,11 +111,17 @@ class SensorFusion(Node):
     def _encoder_odom(self, dt):
         """
         Skid steer odometry from wheel velocities.
-        Left wheels:  FL(0) + RL(3)
-        Right wheels: FR(1) + RR(2)
+        Physical layout:
+          index 0 = M1 = Back-Right  (BR)
+          index 1 = M2 = Back-Left   (BL)
+          index 2 = M3 = Front-Left  (FL)
+          index 3 = M4 = Front-Right (FR)
+
+        Left  wheels: M3(FL)=index2, M2(BL)=index1
+        Right wheels: M4(FR)=index3, M1(BR)=index0
         """
-        v_left  = (self._wheel_vel[0] + self._wheel_vel[3]) / 2.0
-        v_right = (self._wheel_vel[1] + self._wheel_vel[2]) / 2.0
+        v_left  = (self._wheel_vel[2] + self._wheel_vel[1]) / 2.0   # FL + BL
+        v_right = (self._wheel_vel[3] + self._wheel_vel[0]) / 2.0   # FR + BR
 
         v     = (v_right + v_left)  / 2.0
         omega = (v_right - v_left)  / WHEELBASE
